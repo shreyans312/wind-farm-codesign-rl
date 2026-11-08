@@ -3,6 +3,8 @@
 EnvPG layout and yaw co-design for WFCRL's seven-turbine Ablaincourt FLORIS case.
 
 ```bash
+python3.12 -m venv .venv
+.venv/bin/pip install -e ./wfcrl-env torch tensorboard tyro stable-baselines3 python-dotenv seaborn notebook
 .venv/bin/python envpg.py --site XMIN XMAX YMIN YMAX --max-displacement METRES --min-spacing METRES --run-dir runs/name
 .venv/bin/tensorboard --logdir runs
 ```
