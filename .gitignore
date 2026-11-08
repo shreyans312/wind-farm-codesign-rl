@@ -1,0 +1,10 @@
+__pycache_*/
+.vscode/
+.DS_Store*
+.venv
+.cursorrules/
+.cursor/
+__simul__/
+
+/docs/
+/runs/
