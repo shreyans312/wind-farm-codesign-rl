@@ -1,0 +1,9 @@
+__simul__/*
+runs/*
+simulators/*
+__pycache__/*
+wandb/*
+.vscode/*
+algos/private/*
+layouts/*
+*.pyc

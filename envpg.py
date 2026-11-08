@@ -282,12 +282,10 @@ def train(cfg):
     rng = np.random.default_rng(cfg.seed)
     run_dir = Path(cfg.run_dir)
     run_dir.mkdir(parents=True, exist_ok=False)
-    revisions = {}
-    for name in ("wfcrl-env", "wfcrl-benchmark"):
-        revisions[name] = subprocess.check_output(
-            ["git", "-C", str(ROOT / name), "rev-parse", "HEAD"], text=True
-        ).strip()
-    metadata = {"parameters": asdict(cfg), "revisions": revisions,
+    revision = subprocess.check_output(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
+    ).strip()
+    metadata = {"parameters": asdict(cfg), "revision": revision,
                 "packages": {name: version(name) for name in
                              ("torch", "tensorboard", "numpy", "floris", "gymnasium")}}
     (run_dir / "config.json").write_text(json.dumps(metadata, indent=2))
