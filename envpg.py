@@ -1,11 +1,4 @@
-"""EnvPG for the seven-turbine Ablaincourt FLORIS case.
-
-The paper proves the gradient for finite state/action spaces. Here the generalized
-critic is split into a base-layout Q and a paired local cost-sensitivity model:
-the canonical next state is layout independent under fixed wind and steady FLORIS.
-This continuous-action, constrained-layout adaptation gates design steps on an
-empirical derivative check. Cost is minus the unchanged WFCRL reward.
-"""
+# EnvPG for the seven-turbine Ablaincourt FLORIS case. Cost is minus the unchanged WFCRL reward
 
 import argparse
 import copy
@@ -158,7 +151,7 @@ class Critic(nn.Module):
 
 
 class CostSensitivity(nn.Module):
-    """Local slope of the current cost; future canonical state is layout independent."""
+    # Local slope of the current cost; future canonical state is layout independent
 
     def __init__(self, horizon):
         super().__init__()
@@ -174,7 +167,7 @@ def tensor(x):
 
 
 def trial_step(trial, base, z_trial, action):
-    # FLORIS is steady state: its next wake depends on current wind, layout and yaw.
+    # FLORIS is steady state: its next wake depends on current wind, layout and yaw
     set_layout(trial, z_trial)
     trial._state = copy.deepcopy(base._state)
     trial.num_moves = base.num_moves
@@ -240,7 +233,7 @@ def evaluate(env, actor, z, cfg, conditions):
 
 
 def one_step_gradient(trial, base, z, s, a, actor, alpha, cfg):
-    """Paired difference of current cost plus entropy at a fixed state/action."""
+    # Paired difference of current cost plus entropy at a fixed state/action
     result = np.full(12, np.nan)
     calls = 0
     for i in range(12):
