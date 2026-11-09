@@ -8,4 +8,6 @@ source .venv/bin/activate
 pip install -e ./wfcrl-env torch tensorboard tyro stable-baselines3 python-dotenv seaborn notebook
 ```
 
-Run [EnvPG](envpg.ipynb) or [IPPO/MAPPO](wfcrl_baselines.ipynb), then [compare checkpoints](compare_models.ipynb). Set site and spacing limits in the EnvPG notebook.
+Run [EnvPG](envpg.ipynb) or [IPPO/MAPPO](wfcrl_baselines.ipynb). The [comparison notebook](compare_models.ipynb) evaluates saved diagnostic runs.
+
+`envpg.py` implements the generalized-critic path. The comparison notebook labels earlier runs as diagnostics.

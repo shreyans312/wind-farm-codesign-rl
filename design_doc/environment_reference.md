@@ -26,7 +26,7 @@ Yaw targets are clipped to ±40°. The duty guard can replace an increment with 
 
 ## Layout, wind and reward
 
-The design is the x/y offset of turbines 2–7 (12 variables); turbine 1 stays fixed. Layout is constant within an episode. Site bounds, movement limits and minimum spacing must be supplied separately.
+Our co-design uses four geometry coefficients: longitudinal spread, transverse shear, transverse bow and alternating stagger. They move all seven turbines. Layout is constant within an episode; site bounds, displacement limits and minimum spacing are supplied separately.
 
 For power P in kW, freestream speed u in m/s, and the four scaled FLORIS load proxies L per turbine, the checkout reward is
 

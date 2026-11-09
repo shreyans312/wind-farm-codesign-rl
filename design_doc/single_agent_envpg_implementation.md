@@ -1,49 +1,56 @@
 # EnvPG on Ablaincourt
 
-## Model
+## Design and control
 
-Turbine 1 stays at its reference position. The x/y offsets of turbines 2–7 form the design $\mathbf z\in\mathbb R^{12}$. Site bounds, maximum displacement and minimum spacing are inputs; WFCRL does not specify them. A layout stays fixed for an episode.
+The design $z\in\mathbb R^4$ moves all seven turbines through four geometry modes: longitudinal spread, transverse shear, transverse bow and alternating stagger. Each mode is normalized so a 1 m coefficient moves at most one turbine by 1 m. This searches a four-dimensional layout subspace. The site $(400,2500,-400,400)$ m, 150 m displacement limit and 250 m minimum spacing are our experiment choices, not WFCRL settings. The layout stays fixed during each 150-step episode.
 
-$$
-s_t=(u_\infty,\phi_\infty,\boldsymbol\psi_t,\mathbf h_t,t),
-\qquad
-\mathbf a_t=(\Delta\psi_{1,t},\ldots,\Delta\psi_{7,t})\in[-5^\circ,5^\circ]^7.
-$$
-
-The 17-value state contains freestream wind, seven yaw targets, seven accumulated yaw movements and time. The actor also receives $\mathbf z$. Stock local wind measurements are omitted because they change meaning with layout. With fixed wind and steady FLORIS, layout changes reward but not this state's next-step transition. The actor uses a bounded stochastic action distribution and sets duty-blocked increments to zero.
-
-Set $c_{\mathbf z}=-r_{\mathbf z}$. With entropy weight $\alpha$, EnvPG minimizes
+Let $t$ and $n$ be unit vectors along and across the reference row, and $u_i$ the centered longitudinal coordinate scaled to $[-1,1]$. Before normalizing each mode, the turbine displacements are
 
 $$
-J_H(\theta,\mathbf z)=
-\mathbb E\left[\sum_{t=0}^{T-1}\gamma^t
-\left(c_{\mathbf z}(s_t,a_t,s_{t+1})
-+\alpha\log\pi_\theta(a_t\mid s_t,\mathbf z)\right)\right].
+B_{1i}=u_i t,\quad B_{2i}=u_i n,\quad
+B_{3i}=(u_i^2-\overline{u^2})n,\quad
+B_{4i}=((-1)^{i-1}-\overline{(-1)^{i-1}})n,\qquad
+p_i(z)=p_i^0+\sum_{k=1}^4 z_k\widetilde B_{ki}.
 $$
 
-## Update
+The controller sees freestream wind, seven yaw angles, seven accumulated yaw movements, time and $z$. It predicts target yaw angles and samples increments in $[-5^\circ,5^\circ]$ around the target error. The WFCRL duty guard can set an increment to zero. We omit local wind measurements because they change with layout, while the chosen state still determines the next yaw and duty state under steady FLORIS.
 
-At base layout $\mathbf z_0$, collect policy rollouts. For each sampled state and action, run one paired transition at a nearby feasible layout $\mathbf z'$. A base-layout critic $Q_\varphi$ learns by TD; a separate local slope fits the paired cost difference:
+The paper assumes finite state/action spaces and smooth design dependence. Continuous yaw and WFCRL's hard duty guard make this an adaptation of EnvPG. The stagger-mode FLORIS slope also changes noticeably between 0.5 m and 2 m finite differences, so local smoothness is only approximate; we perturb designs at 1 m scale.
 
-$$
-g_\omega(s,a)^\top(\mathbf z'-\mathbf z_0)
-\approx c_{\mathbf z'}(s,a,s')-c_{\mathbf z_0}(s,a,s').
-$$
+## Objective
 
-The updates use
+Using the unchanged WFCRL reward $r_t$, cost is $c_t=-r_t$. The actor and layout minimize
 
 $$
-\begin{aligned}
-\widehat{\nabla_\theta J_H}
-&=\sum_t\gamma^t(Q_\varphi+\alpha)\nabla_\theta\log\pi_\theta(a_t\mid s_t,\mathbf z_0),\\
-\widehat{\nabla_{\mathbf z}J_H}
-&=\sum_t\gamma^t\left[g_\omega+
-(Q_\varphi+\alpha)\nabla_{\mathbf z}\log\pi_\theta(a_t\mid s_t,\mathbf z_0)\right].
-\end{aligned}
+J_H(\theta,z)=\mathbb E\!\left[\sum_{t=0}^{149}\gamma^t
+\big(c_t+\alpha\log\pi_\theta(a_t\mid s_t,z)\big)\right].
 $$
 
-Here $Q_\varphi$ and $g_\omega$ are evaluated at $(s_t,a_t)$. The local slope replaces direct differentiation of the paper's generalized critic because the chosen state has no layout-dependent transition. A layout step is accepted only when its one-step slope agrees with paired FLORIS finite differences and the new layout is feasible. This continuous-action, constrained version is an empirical adaptation of EnvPG.
+The evaluation score is the undiscounted WFCRL reward summed over the same 25 weighted wind bins for every model. We show yaw gain and layout gain separately.
 
-## Comparison
+We use $\gamma=1$ because evaluation also sums all 150 rewards. We use $\alpha_0=0.01$ and $\alpha_{k+1}=0.9\alpha_k$. The initial joint log-probability is around $-15$, so this contributes about $-0.15$ per step, versus roughly $-2.6$ physical cost; the temperature then approaches zero.
 
-Score each fixed layout and policy on the 25 weighted Ablaincourt wind bins, with 150 controlled steps per bin. Use the same reward coefficient (0.1 in this checkout), wind cases, horizon and simulator-call budget for EnvPG, IPPO and MAPPO. Retrain each controller on the original and learned layouts. The WFCRL paper uses a default load coefficient of 1, so its published scores are not directly comparable. A full-trajectory design-gradient check remains to be done before drawing performance conclusions.
+The actor starts with zero target yaw; its stochastic policy still explores. The critic gets 200 minibatch updates per iteration, and the layout stays fixed for the first 20 iterations. These choices follow the fixed-policy value-calibration check. The layout step size is $100/150$ because its gradient now sums over 150 steps rather than averaging them.
+
+## Generalized critic
+
+At the current layout $z_k$, a nearby feasible $z'$ supplies a one-step transition. The action for that transition is sampled from $\pi_\theta(\cdot\mid s,z')$. The critic sees $z'$ for the current cost and $z_k$ for future value:
+
+$$
+y=c_{z'}(s,a,s')+\alpha\log\pi_\theta(a\mid s,z')
++\gamma\,\mathbb E_{a'\sim\pi_\theta(\cdot\mid s',z_k)}
+Q_{\bar\phi}(s',a',z_k).
+$$
+
+A TD update fits $Q_\phi(s,a,z')$ to $y$. Sampled full-episode returns also fit its value at $z_k$; this auxiliary fit reduces value bias in our finite-horizon case. The policy uses $Q_\phi(s,a,z_k)+\alpha$. The layout uses the two terms of the EnvPG gradient,
+
+$$
+\nabla_z Q_\phi(s,a,z)\big|_{z_k}
++Q_\phi(s,a,z_k)\,\nabla_z\log\pi_\theta(a\mid s,z_k).
+$$
+
+We also fit a paired Bellman difference. With the same state and action, changing the layout leaves our next state vector unchanged, so the generalized $Q$ difference equals the immediate cost and entropy difference. This extra simulator sample trains the local design slope; updates still use gradients of the learned $Q$.
+
+FLORIS finite differences check the learned layout slope; they do not supply the EnvPG update.
+
+Our critic uses the paper's two design copies explicitly: $Q_\phi(s,a,z;z_k)=h(t)v_\phi(s,a,z_k)+g_\phi(s,a,z_k)^\top(z-z_k)/150$, with $h(t)=\sum_{j=0}^{149-t}\gamma^j$. The base value vanishes at the horizon; the local design term is linear over the 1 m perturbation and is not multiplied by the remaining horizon. We subtract $Q_\phi(s,0,z_k;z_k)$ from the actor and design score terms. This action-independent baseline leaves their expected gradients unchanged.
