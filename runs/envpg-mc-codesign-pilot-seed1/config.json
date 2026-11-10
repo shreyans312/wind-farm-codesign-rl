@@ -1,0 +1,42 @@
+{
+  "parameters": {
+    "site": [
+      400.0,
+      2500.0,
+      -400.0,
+      400.0
+    ],
+    "max_displacement": 150.0,
+    "min_spacing": 250.0,
+    "run_dir": "runs/envpg-mc-codesign-pilot-seed1",
+    "seed": 1,
+    "iterations": 30,
+    "episodes": 4,
+    "horizon": 150,
+    "gamma": 1.0,
+    "load_coef": 0.1,
+    "alpha": 0.01,
+    "alpha_decay": 0.9,
+    "perturb_sigma": 1.0,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "design_lr": 0.6666666666666666,
+    "critic_updates": 200,
+    "batch_size": 128,
+    "warmup_iterations": 20,
+    "eval_every": 10,
+    "wind_data": "/Users/shreyansjain/Desktop/Wind-MARL/wfcrl-benchmark/data/smarteole.csv",
+    "finite_difference_m": 0.5,
+    "zero_init_actor": true,
+    "target_tracking": true
+  },
+  "revision": "35749d9cac3bd9f1bd20bcc2a5a570f682f56a22",
+  "source_sha256": "ead6411ea9155aec60bc28f871e11676dfaf27c15c6f78c27792907e9413cea0",
+  "packages": {
+    "torch": "2.15.0",
+    "tensorboard": "2.21.0",
+    "numpy": "2.5.4",
+    "floris": "3.5",
+    "gymnasium": "0.29.1"
+  }
+}
