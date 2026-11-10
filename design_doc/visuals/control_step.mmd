@@ -1,0 +1,19 @@
+flowchart TB
+  raw["WFCRL observation: 23 values; freewind 2, yaw 7, local speed 7, local direction 7"] --> envpg_state["EnvPG state: 17 values; freewind 2, yaw 7, yaw use 7, time 1"]
+  duty["Internal state: yaw use and step count"] --> envpg_state
+  raw --> local["WFCRL agent observation: 3 values; own yaw, local speed, local direction"]
+  design["Fixed episode layout z"] --> actor["Central EnvPG actor"]
+  envpg_state --> actor
+  local --> agents["7 separate WFCRL agents"]
+  actor --> proposal["Joint yaw increments: 7 values, -5..5 degrees"]
+  agents --> proposal
+  proposal --> guard["Duty guard; executed yaw increment may be zero"]
+  guard --> target["Yaw target clipped to -40..40 degrees"]
+  target --> simulator["FLORIS step: 60 s"]
+  wind["Freestream wind"] --> simulator
+  design --> simulator
+  simulator --> next["Next yaw and local wind"]
+  simulator --> metrics["Power and load proxies"]
+  next --> raw
+  next --> duty
+  metrics --> reward["Shared WFCRL reward"]

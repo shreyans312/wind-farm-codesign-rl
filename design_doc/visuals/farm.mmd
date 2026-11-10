@@ -1,0 +1,15 @@
+flowchart LR
+  ref["Reference positions: 7 turbines"] --> geometry["Layout p(z)"]
+  z1["longitudinal spread: +0.22 m"] --> geometry
+  z2["transverse shear: +0.27 m"] --> geometry
+  z3["transverse bow: +0.13 m"] --> geometry
+  z4["alternating stagger: +3.48 m"] --> geometry
+  site["Site x 400..2500 m; y -400..400 m"] -.-> geometry
+  limits["Max shift 150 m; spacing at least 250 m"] -.-> geometry
+  geometry --> wake["FLORIS steady wake and turbine power"]
+  wind["Freestream wind speed and direction"] --> wake
+  yaw["Current yaw angles: 7"] --> wake
+  wake --> power["Turbine power: 7 values"]
+  wake --> loads["Turbine load proxies"]
+  power --> reward["Shared reward = mean(1000 P / u³) - 0.1 mean(abs(load))"]
+  loads --> reward

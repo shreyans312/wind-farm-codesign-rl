@@ -1,0 +1,20 @@
+flowchart TB
+  config["30 iterations; 4 episodes each; 20 layout warmup iterations"] --> rollout
+  design["Current design z; fixed for 150 control steps"] --> rollout["Actor plus FLORIS rollout"]
+  actor["Central yaw actor"] --> rollout
+  train_wind["Training wind: sample 25 bins by frequency"] --> rollout
+  rollout --> samples["State, action, cost trajectories"]
+  design --> perturb["Nearby feasible design z-prime; sigma 1 m"]
+  perturb --> trial["Same-state, same-action paired FLORIS step"]
+  samples --> critic["Generalized critic Q(s,a,z-prime;z)"]
+  trial --> critic
+  samples --> returns["Auxiliary finite-horizon return fit"]
+  returns --> critic
+  updates["200 critic updates per iteration; gamma 1"] --> critic
+  critic --> actor_update["Policy-gradient actor update"]
+  critic --> design_update["EnvPG design gradient through Q and policy score"]
+  actor_update --> actor
+  design_update --> design
+  eval["Common evaluation: 25 wind bins, 150 steps each"] --> split["Report layout gain and yaw gain separately"]
+  actor --> eval
+  design --> eval
